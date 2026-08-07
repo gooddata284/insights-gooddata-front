@@ -1,0 +1,167 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Insights Financeiros</title>
+
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      padding: 12px;
+      font-family: Arial, Helvetica, sans-serif;
+      color: #17213B;
+      background: transparent;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: 32% 68%;
+      gap: 12px;
+    }
+
+    .card {
+      min-height: 180px;
+      padding: 15px;
+      border: 1px solid #E4E7EC;
+      border-radius: 10px;
+      background: #FFFFFF;
+    }
+
+    h2 {
+      margin: 0 0 14px;
+      font-size: 15px;
+      color: #17213B;
+    }
+
+    .item {
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+      margin: 12px 0;
+      font-size: 13px;
+    }
+
+    .icon {
+      width: 25px;
+      height: 25px;
+      display: grid;
+      place-items: center;
+      flex-shrink: 0;
+      border-radius: 50%;
+      color: #FFFFFF;
+      font-weight: bold;
+    }
+
+    .small {
+      color: #475467;
+      line-height: 1.4;
+    }
+
+    .loading {
+      padding: 20px;
+      color: #667085;
+    }
+
+    .error {
+      padding: 20px;
+      color: #B42318;
+    }
+
+    @media (max-width: 700px) {
+      .grid {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <div id="app" class="loading">
+    Carregando insights...
+  </div>
+
+  <script>
+    const API_URL =
+      "https://insights-gooddata.onrender.com/api/insights";
+
+    async function carregarInsights() {
+      const parametros = new URLSearchParams(
+        window.location.search
+      );
+
+      const project = parametros.get("project") ||
+        "i5xejx4pzph864ait3t5uo3o2gns65u9";
+
+      const dateFrom = parametros.get("dateFrom") ||
+        "2026-01-01";
+
+      const dateTo = parametros.get("dateTo") ||
+        "2026-06-30";
+
+      const url = new URL(API_URL);
+
+      url.searchParams.set("project", project);
+      url.searchParams.set("dateFrom", dateFrom);
+      url.searchParams.set("dateTo", dateTo);
+
+      const resposta = await fetch(url);
+
+      if (!resposta.ok) {
+        throw new Error(
+          "Não foi possível carregar a API de insights."
+        );
+      }
+
+      const dados = await resposta.json();
+
+      const destaques = dados.destaques.map(item => `
+        <div class="item">
+          <div class="icon" style="background:${item.cor}">
+            ${item.icone}
+          </div>
+
+          <div>
+            <strong>${item.titulo}</strong>
+            <div class="small">${item.descricao}</div>
+          </div>
+        </div>
+      `).join("");
+
+      const insights = dados.insights.map(item => `
+        <div class="item">
+          <div class="icon" style="background:${item.cor}">
+            ${item.status === "warning" ? "!" : "✓"}
+          </div>
+
+          <div class="small">${item.texto}</div>
+        </div>
+      `).join("");
+
+      document.getElementById("app").innerHTML = `
+        <div class="grid">
+          <section class="card">
+            <h2>DESTAQUES</h2>
+            ${destaques}
+          </section>
+
+          <section class="card">
+            <h2>INSIGHTS AUTOMÁTICOS</h2>
+            ${insights}
+          </section>
+        </div>
+      `;
+    }
+
+    carregarInsights().catch(erro => {
+      document.getElementById("app").innerHTML = `
+        <div class="error">${erro.message}</div>
+      `;
+    });
+  </script>
+</body>
+</html>
