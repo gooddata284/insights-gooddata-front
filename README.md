@@ -1,0 +1,1 @@
+# insights-gooddata-front
